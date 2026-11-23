@@ -12,6 +12,8 @@ const authMiddleware = require('./middleware/authMiddleware');
 
 const reviewRoutes = require('./routes/reviewRoutes');
 
+const watchlistRoutes = require('./routes/watchlistRoutes');
+
 
 // Skapar vår Express-applikation.
 const app = express();
@@ -22,7 +24,9 @@ const PORT = 3000;
 // Gör så att servern kan läsa JSON från inkommande anrop.
 app.use(express.json());
 app.use('/api', reviewRoutes);
+app.use('/api', watchlistRoutes);
 app.use('/api/auth', authRoutes);
+
 
 // Vår första GET-route.
 app.get('/api/movies', async (req, res) => {
