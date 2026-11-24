@@ -10,6 +10,9 @@ const pool = require('../db');
 // Hämtar vår middleware som kontrollerar JWT.
 const authMiddleware = require('../middleware/authMiddleware');
 
+// Hämtar vår Review-klass.
+const Review = require('../models/Review');
+
 // Skapar en router för recensionerna.
 const router = express.Router();
 
@@ -29,7 +32,7 @@ router.get('/movies/:movieId/reviews', async (req, res) => {
 
         // Hämtar alla recensioner för filmen och användarnas e-postadresser.
         const [reviews] = await pool.query(
-            `SELECT reviews.id, reviews.rating, reviews.comment,
+            `SELECT reviews.id, reviews.movie_id, reviews.rating, reviews.comment,
                     reviews.user_id, users.email
              FROM reviews
              JOIN users ON reviews.user_id = users.id
@@ -37,10 +40,24 @@ router.get('/movies/:movieId/reviews', async (req, res) => {
             [movieId]
         );
 
+        // Skapar ett Review-objekt för varje recension.
+        const reviewObjects = reviews.map(review => {
+            const reviewObject = new Review(
+                review.id,
+                review.user_id,
+                review.movie_id,
+                review.rating,
+                review.comment,
+                review.email
+            );
+
+            return reviewObject.toJSON();
+        });
+
         // Skickar tillbaka recensionerna.
         res.status(200).json({
             movieId: movieId,
-            reviews: reviews
+            reviews: reviewObjects
         });
 
     } catch (error) {
@@ -51,6 +68,7 @@ router.get('/movies/:movieId/reviews', async (req, res) => {
         });
     }
 });
+
 
 // POST-route för att skapa en recension på en film.
 // Användaren måste vara inloggad.

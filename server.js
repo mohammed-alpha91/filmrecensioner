@@ -4,15 +4,16 @@
 // Hämtar Express så att vi kan skapa en server.
 const express = require('express');
 
+// Hämtar anslutningen till MySQL.
 const pool = require('./db');
 
+// Hämtar våra routes.
 const authRoutes = require('./routes/authRoutes');
-
-const authMiddleware = require('./middleware/authMiddleware');
-
 const reviewRoutes = require('./routes/reviewRoutes');
-
 const watchlistRoutes = require('./routes/watchlistRoutes');
+
+// Hämtar vår Movie-klass.
+const Movie = require('./models/Movie');
 
 
 // Skapar vår Express-applikation.
@@ -23,21 +24,35 @@ const PORT = 3000;
 
 // Gör så att servern kan läsa JSON från inkommande anrop.
 app.use(express.json());
+
+// Kopplar våra routes till servern.
 app.use('/api', reviewRoutes);
 app.use('/api', watchlistRoutes);
 app.use('/api/auth', authRoutes);
 
 
-// Vår första GET-route.
+// GET-route som hämtar alla filmer.
 app.get('/api/movies', async (req, res) => {
     try {
         // Hämtar alla filmer från databasen.
         const [movies] = await pool.query('SELECT * FROM movies');
 
+        // Skapar ett Movie-objekt för varje film.
+        const movieObjects = movies.map(movie => {
+            const movieObject = new Movie(
+                movie.id,
+                movie.title,
+                movie.genre,
+                movie.release_year
+            );
+
+            return movieObject.toJSON();
+        });
+
         // Skickar filmerna tillbaka som JSON.
         res.status(200).json({
             message: 'Välkommen till FilmRecensioner!',
-            movies: movies
+            movies: movieObjects
         });
 
     } catch (error) {
@@ -48,7 +63,6 @@ app.get('/api/movies', async (req, res) => {
         });
     }
 });
-
 
 
 // GET-route som hämtar en specifik film med hjälp av ID.
@@ -89,15 +103,8 @@ app.get('/api/movies/:id', async (req, res) => {
     }
 });
 
-// Tillfällig route för att testa JWT-middleware.
-app.get('/api/test-protected', authMiddleware, (req, res) => {
-    res.status(200).json({
-        message: 'Du har tillgång till den skyddade routen!',
-        userId: req.userId
-    });
-});
 
 // Startar servern och väntar på anrop.
 app.listen(PORT, () => {
-  console.log(`Servern körs på http://localhost:${PORT}`);
+    console.log(`Servern körs på http://localhost:${PORT}`);
 });
