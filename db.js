@@ -5,10 +5,10 @@ require('dotenv').config();
 
 // Skapar en anslutning till vår MySQL-databas.
 const pool = mysql.createPool({
-    host: 'localhost',
-    user: 'root',
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
-    database: 'filmrecensioner'
+    database: process.env.DB_NAME
 });
 
 // Gör pool tillgänglig i andra filer.

@@ -29,6 +29,22 @@ router.post('/register', async (req, res) => {
             });
         }
 
+        // Kontrollerar att e-postadressen har ett giltigt format.
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!emailPattern.test(email)) {
+            return res.status(400).json({
+                message: 'Ogiltig e-postadress.'
+            });
+        }
+
+        // Kontrollerar att lösenordet är minst 8 tecken.
+        if (password.length < 8) {
+            return res.status(400).json({
+                message: 'Lösenordet måste vara minst 8 tecken.'
+            });
+        }
+
         // Kontrollerar om e-postadressen redan finns i databasen.
         const [existingUsers] = await pool.query(
             'SELECT id FROM users WHERE email = ?',
@@ -63,7 +79,6 @@ router.post('/register', async (req, res) => {
         });
     }
 });
-
 
 
 // POST-route för att logga in en användare.
