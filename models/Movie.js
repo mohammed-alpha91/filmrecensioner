@@ -2,6 +2,8 @@
 'use strict';
 
 // En klass som beskriver en film.
+// Varje objekt motsvarar en rad i tabellen movies.
+// Klassen gör att alla filmer skickas till klienten i samma form.
 class Movie {
     constructor(id, title, genre, release_year) {
         this.id = id;

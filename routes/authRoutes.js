@@ -10,6 +10,7 @@ const bcrypt = require('bcrypt');
 // Hämtar vår anslutning till MySQL.
 const pool = require('../db');
 
+// Hämtar jsonwebtoken för att kunna skapa en JWT-token vid inloggning.
 const jwt = require('jsonwebtoken');
 
 // Skapar en router för användarnas routes.
@@ -29,7 +30,16 @@ router.post('/register', async (req, res) => {
             });
         }
 
+        // Kontrollerar att e-post och lösenord är text.
+        // Annars kan till exempel ett tal som lösenord krascha bcrypt.
+        if (typeof email !== 'string' || typeof password !== 'string') {
+            return res.status(400).json({
+                message: 'E-post och lösenord måste vara text.'
+            });
+        }
+
         // Kontrollerar att e-postadressen har ett giltigt format.
+        // Mönstret kräver: tecken, @, tecken, punkt, tecken (t.ex. anna@test.com).
         const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
         if (!emailPattern.test(email)) {
@@ -58,6 +68,8 @@ router.post('/register', async (req, res) => {
         }
 
         // Skapar en hash av lösenordet.
+        // 10 är antalet "salt rounds": ju högre, desto svårare att knäcka.
+        // Lösenordet i klartext sparas aldrig i databasen.
         const passwordHash = await bcrypt.hash(password, 10);
 
         // Sparar användaren och lösenordets hash i databasen.
@@ -101,6 +113,8 @@ router.post('/login', async (req, res) => {
         );
 
         // Kontrollerar om användaren finns.
+        // Samma felmeddelande används för fel e-post och fel lösenord,
+        // så att ingen kan ta reda på vilka e-postadresser som är registrerade.
         if (users.length === 0) {
             return res.status(401).json({
                 message: 'Fel e-post eller lösenord.'
@@ -124,6 +138,8 @@ router.post('/login', async (req, res) => {
         }
 
         // Skapar en JWT-token för den inloggade användaren.
+        // Token innehåller användarens ID och signeras med JWT_SECRET från .env.
+        // Den gäller i 1 timme.
         const token = jwt.sign(
             { id: user.id },
             process.env.JWT_SECRET,
@@ -146,4 +162,5 @@ router.post('/login', async (req, res) => {
 });
 
 
+// Gör routern tillgänglig i server.js.
 module.exports = router;

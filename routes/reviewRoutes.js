@@ -30,13 +30,25 @@ router.get('/movies/:movieId/reviews', async (req, res) => {
             });
         }
 
-        // Hämtar alla recensioner för filmen och användarnas e-postadresser.
+        // Kontrollerar att filmen finns, så att ett okänt ID ger 404
+        // i stället för en tom lista.
+        const [movies] = await pool.query(
+            'SELECT id FROM movies WHERE id = ?',
+            [movieId]
+        );
+
+        if (movies.length === 0) {
+            return res.status(404).json({
+                message: 'Filmen hittades inte.'
+            });
+        }
+
+        // Hämtar alla recensioner för filmen.
+        // Användarnas e-post hämtas inte, eftersom den inte ska visas publikt.
         const [reviews] = await pool.query(
-            `SELECT reviews.id, reviews.movie_id, reviews.rating, reviews.comment,
-                    reviews.user_id, users.email
+            `SELECT id, user_id, movie_id, rating, comment
              FROM reviews
-             JOIN users ON reviews.user_id = users.id
-             WHERE reviews.movie_id = ?`,
+             WHERE movie_id = ?`,
             [movieId]
         );
 
@@ -47,8 +59,7 @@ router.get('/movies/:movieId/reviews', async (req, res) => {
                 review.user_id,
                 review.movie_id,
                 review.rating,
-                review.comment,
-                review.email
+                review.comment
             );
 
             return reviewObject.toJSON();
@@ -114,6 +125,8 @@ router.post('/movies/:movieId/reviews', authMiddleware, async (req, res) => {
         }
 
         // Kontrollerar om användaren redan har recenserat filmen.
+        // Regeln är: en recension per användare och film.
+        // Databasen skyddar också regeln med UNIQUE (user_id, movie_id).
         const [existingReviews] = await pool.query(
             'SELECT id FROM reviews WHERE user_id = ? AND movie_id = ?',
             [req.userId, movieId]
@@ -126,6 +139,8 @@ router.post('/movies/:movieId/reviews', authMiddleware, async (req, res) => {
         }
 
         // Sparar recensionen i databasen.
+        // Användarens ID tas från token (req.userId), aldrig från req.body,
+        // så att ingen kan skriva en recension i någon annans namn.
         await pool.query(
             'INSERT INTO reviews (user_id, movie_id, rating, comment) VALUES (?, ?, ?, ?)',
             [req.userId, movieId, rating, comment.trim()]
@@ -147,7 +162,8 @@ router.post('/movies/:movieId/reviews', authMiddleware, async (req, res) => {
 
 
 // PUT-route för att ändra en befintlig recension.
-// Användaren måste vara inloggad.
+// Användaren måste vara inloggad och äga recensionen.
+// PUT betyder att hela recensionen ersätts, därför krävs både betyg och kommentar.
 router.put('/reviews/:id', authMiddleware, async (req, res) => {
     try {
         // Hämtar recensionens ID från URL:en.
@@ -190,8 +206,19 @@ router.put('/reviews/:id', authMiddleware, async (req, res) => {
             });
         }
 
+        // Skapar ett Review-objekt av raden från databasen.
+        const review = new Review(
+            reviews[0].id,
+            reviews[0].user_id,
+            reviews[0].movie_id,
+            reviews[0].rating,
+            reviews[0].comment
+        );
+
         // Kontrollerar att recensionen tillhör den inloggade användaren.
-        if (reviews[0].user_id !== req.userId) {
+        // req.userId kommer från den verifierade token i authMiddleware.
+        // Är det någon annans recension svarar vi 403 (förbjudet).
+        if (!review.isOwnedBy(req.userId)) {
             return res.status(403).json({
                 message: 'Du får inte ändra någon annans recension.'
             });
@@ -218,4 +245,5 @@ router.put('/reviews/:id', authMiddleware, async (req, res) => {
 });
 
 
+// Gör routern tillgänglig i server.js.
 module.exports = router;

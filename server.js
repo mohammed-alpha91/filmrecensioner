@@ -26,12 +26,14 @@ const PORT = 3000;
 app.use(express.json());
 
 // Kopplar våra routes till servern.
+// /api/auth/... går till authRoutes, och /api/... går till recensioner och watchlist.
 app.use('/api', reviewRoutes);
 app.use('/api', watchlistRoutes);
 app.use('/api/auth', authRoutes);
 
 
 // GET-route som hämtar alla filmer.
+// Den är publik, så man behöver inte vara inloggad.
 app.get('/api/movies', async (req, res) => {
     try {
         // Hämtar alla filmer från databasen.
@@ -91,8 +93,16 @@ app.get('/api/movies/:id', async (req, res) => {
             });
         }
 
+        // Skapar ett Movie-objekt av raden, precis som i listan ovan.
+        const movie = new Movie(
+            movies[0].id,
+            movies[0].title,
+            movies[0].genre,
+            movies[0].release_year
+        );
+
         // Skickar tillbaka filmen.
-        res.status(200).json(movies[0]);
+        res.status(200).json(movie.toJSON());
 
     } catch (error) {
         console.error('Fel vid hämtning av film:', error.message);
@@ -101,6 +111,32 @@ app.get('/api/movies/:id', async (req, res) => {
             message: 'Något gick fel vid hämtning av filmen.'
         });
     }
+});
+
+
+// Om ingen route ovan matchar adressen svarar vi med JSON i stället för en HTML-sida.
+// Den måste ligga efter alla routes, annars fångar den anropen för tidigt.
+app.use((req, res) => {
+    res.status(404).json({
+        message: 'Routen hittades inte.'
+    });
+});
+
+// Felhanterare för fel som inte fångats i routerna.
+// Till exempel om klienten skickar trasig JSON i body.
+// Det riktiga felet loggas bara på servern och visas aldrig för klienten.
+app.use((error, req, res, next) => {
+    if (error.type === 'entity.parse.failed') {
+        return res.status(400).json({
+            message: 'Ogiltig JSON i anropet.'
+        });
+    }
+
+    console.error('Oväntat fel:', error.message);
+
+    res.status(500).json({
+        message: 'Något gick fel på servern.'
+    });
 });
 
 

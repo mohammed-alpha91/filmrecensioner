@@ -14,9 +14,12 @@ const authMiddleware = require('../middleware/authMiddleware');
 const router = express.Router();
 
 // GET-route som hämtar användarens sparade filmer.
+// Det finns inget användar-ID i adressen. Servern använder alltid req.userId
+// från token, så en användare kan aldrig se någon annans watchlist.
 router.get('/watchlist', authMiddleware, async (req, res) => {
     try {
         // Hämtar filmerna som tillhör den inloggade användaren.
+        // JOIN hämtar filmens titel, genre och år från tabellen movies.
         const [movies] = await pool.query(
             `SELECT movies.id, movies.title, movies.genre, movies.release_year
              FROM watchlist
