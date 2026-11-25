@@ -120,7 +120,7 @@ Authorization: Bearer <token from login>
 Register / login:
 
 ```json
-{ "email": "anna@test.com", "password": "password123" }
+{ "email": "sara@test.com", "password": "password123" }
 ```
 
 The email must be valid and the password at least 8 characters.
