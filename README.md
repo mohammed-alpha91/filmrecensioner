@@ -54,8 +54,18 @@ If a user tries to review the same movie twice or add a movie that is already in
 
 ## Installation
 
-1. Clone the project from GitHub.
-2. Open the project folder in VS Code.
+1. Clone the project from GitHub:
+
+```bash
+git clone https://github.com/mohammed-alpha91/filmrecensioner.git
+```
+
+2. Open the project folder in VS Code:
+
+```bash
+cd filmrecensioner
+```
+
 3. Install the packages:
 
 ```bash
@@ -97,6 +107,10 @@ The server runs at:
 ## Testing with Postman
 
 The API can be tested using Postman.
+
+All API routes use the following base URL:
+
+`http://localhost:3000`
 
 Public endpoints can be tested directly. For protected endpoints, first register or log in to receive a JWT token.
 
