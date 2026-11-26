@@ -78,7 +78,6 @@ router.post('/register', async (req, res) => {
             [email, passwordHash]
         );
 
-        // Bekräftar att användaren har skapats.
         res.status(201).json({
             message: 'Användaren har registrerats!'
         });
@@ -113,7 +112,6 @@ router.post('/login', async (req, res) => {
         );
 
         // Kontrollerar om användaren finns.
-        // Samma felmeddelande används för fel e-post och fel lösenord,
         // så att ingen kan ta reda på vilka e-postadresser som är registrerade.
         if (users.length === 0) {
             return res.status(401).json({
@@ -139,7 +137,6 @@ router.post('/login', async (req, res) => {
 
         // Skapar en JWT-token för den inloggade användaren.
         // Token innehåller användarens ID och signeras med JWT_SECRET från .env.
-        // Den gäller i 1 timme.
         const token = jwt.sign(
             { id: user.id },
             process.env.JWT_SECRET,
