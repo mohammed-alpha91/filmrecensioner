@@ -217,7 +217,6 @@ router.put('/reviews/:id', authMiddleware, async (req, res) => {
 
         // Kontrollerar att recensionen tillhör den inloggade användaren.
         // req.userId kommer från den verifierade token i authMiddleware.
-        // Är det någon annans recension svarar vi 403 (förbjudet).
         if (!review.isOwnedBy(req.userId)) {
             return res.status(403).json({
                 message: 'Du får inte ändra någon annans recension.'

@@ -28,7 +28,6 @@ function authMiddleware(req, res, next) {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         // Sparar användarens ID så att andra routes kan använda det.
-        // Det här ID:t går att lita på eftersom det kommer från en verifierad token,
         // inte från något som klienten själv skickar.
         req.userId = decoded.id;
 
